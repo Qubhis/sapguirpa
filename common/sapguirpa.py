@@ -105,7 +105,7 @@ class SAPGUIRPA:
     def gui_restore_size(self):
         self.__session.findById("wnd[0]").Restore()
 
-    def send_virtual_key(self, vkey):
+    def send_vkey(self, vkey):
         '''executes virtual key as per below
             0 -> Enter
             3 -> F3
@@ -115,11 +115,11 @@ class SAPGUIRPA:
             82 -> PageDown'''
 
         if vkey not in (0, 3, 8, 11, 81, 82):
-            AssertionError(f"Vkey {vkey} is not supported!")
+            raise AssertionError(f"Vkey {vkey} is not supported!")
 
         self.__session.findById("wnd[0]").sendVKey(vkey)
 
-    def insert_text_field(self, element_id, value):
+    def insert_value(self, element_id, value):
         '''takes element ID path and value to be inserted
         Inserts the value to the field. Returns nothing'''
         field = self.__session.findById(element_id)
@@ -145,12 +145,18 @@ class SAPGUIRPA:
             else:
                 element.selected = 0
 
-        elif element.type == 'GuiRadionButton':
+        elif element.type in ('GuiRadionButton', 'GuiTab'):
             element.select()
             
         else:
             raise AssertionError(f'''{element_id} is not button, checkbox, or 
                                  radiobutton''')
+
+    def select_tab(self, element_id):
+        ''' takes element ID path
+        returns nothing'''
+        self.__session.find
+
 
     def insert_values_standard(self, inputs=dict()):
         '''takes inputs in format {'type_of_field': [element_id, value]}
@@ -166,14 +172,19 @@ class SAPGUIRPA:
             input_data = value[1]
 
             if key == 'text_field':
-                self.insert_text_field(element_id, input_data)
+                self.insert_value(element_id, input_data)
             else:
                 self.press_or_select(element_id, input_data)
 
     def get_element_by_id(self, element_id):
         ''' takes element id
-        , returns element as an object -> we can read properties'''
+        , returns element as an object -> we can use properties and methods'''
         return self.__session.findById(element_id)
+
+    def get_element_value(self, element_id):
+        ''' takes element ID,
+        returns value of the element - if string value'''
+        return self.__session.findById(element_id).text
 
 
                 
