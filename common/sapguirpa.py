@@ -126,7 +126,9 @@ class SAPGUIRPA:
 
     def insert_value(self, element_id, value):
         '''takes element ID path and value to be inserted
-        Inserts the value to the field. Returns nothing'''
+        Inserts the value to the field. 
+        
+        Returns nothing'''
         field = self.__session.findById(element_id)
         type_check = field.type.find('TextField')
 
@@ -137,7 +139,13 @@ class SAPGUIRPA:
     def press_or_select(self, element_id, check=True):
         '''takes element ID path, optionally check=False to indicate
         desire for un-checking a checkbox.
-        acts accordingly based on .type property. 
+        Acts accordingly based on .type property:
+         - GuiButton
+         - GuiCheckBox
+         - GuiRadioButton
+         - GuiTab
+         - GuiMenu
+ 
         Returns nothing'''
         element = self.__session.findById(element_id)
         
@@ -150,13 +158,14 @@ class SAPGUIRPA:
                 element.selected = -1
             else:
                 element.selected = 0
-
-        elif element.type in ('GuiRadionButton', 'GuiTab'):
+        elif element.type == 'GuiRadioButton':
+            if element.selected == False:
+                element.select()
+        elif element.type in ('GuiTab', 'GuiMenu'):
             element.select()
             
         else:
-            raise AssertionError(f'''{element_id} is not button, checkbox, or 
-                                 radiobutton''')
+            raise AssertionError(f'''{element_id} is not button, checkbox, , radiobutton, tab, or GuiMenu''')
 
     def select_tab(self, element_id):
         ''' takes element ID path
@@ -245,15 +254,18 @@ class SAPGUIRPA:
             scrapped_rows.append(row_content)
         return scrapped_rows
             
-    def confirm_screen(self, element_id):
-        ''' Takes element id of a confirmation button or window id to press enter.
+    def confirm_screen(self, element_id, vkey=0):
+        ''' Takes element id of a confirmation button
+        and presses the button, or window's id and presses enter.
+        Additionally, it can take vkey value (in case we need to save transaction before continue to next screen) - by default is 0 (enter)
 
-        Stores current name of a screen or dialog, confirm user's actions,
-        get title again and compares titles. 
+        Stores current name of a screen or a dialog for futher comparison,
+        and confirms user's actions.
+        Afterwards, it gets title again and compares titles. 
 
-        return true if we got to next screen or dialog'''
+        returns true if we got to next screen or dialog'''
         
-        if len(element_id) > 6:
+        if len(element_id) > 6: # single window has only 6 chars
             # extract window id
             window_id = re.search(r"wnd\[[0-9]\]", element_id).group()
         else:
@@ -264,14 +276,26 @@ class SAPGUIRPA:
         if len(element_id) > 6:
             self.press_or_select(element_id)
         else:
-            self.send_vkey(0, window_id)
+            self.send_vkey(vkey, window_id)
 
-        next_title = self.get_screen_title(window_id)
+        try:
+            next_title = self.get_screen_title(window_id)
+        except com_error:
+    # TODO: here we are getting issue with window number
+    #       we need to somehow identified wnd[] index for proper
+    #       functioning
+            next_title = self.get_screen_title("wnd[0]")
 
         if curr_title != next_title:
             return True
         else:
             return False
+
+    def disconnect(self):
+        self.__session = None
+        self.__connection = None
+        self.__application = None
+        self.__sap_gui_auto = None
 
 
                 
