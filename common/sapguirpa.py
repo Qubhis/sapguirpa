@@ -190,6 +190,14 @@ class SAPGUIRPA:
             else:
                 self.press_or_select(element_id, input_data)
 
+    def get_window_count(self):
+        '''returns number of available windows in current session'''
+        return self.__session.Children.count
+
+    def get_last_opened_window(self):
+        last_index = self.get_window_count() - 1
+        return self.__session.Children(last_index).Name
+
     def get_element_by_id(self, element_id):
         ''' takes element id
         , returns element as an object -> we can use properties and methods'''
@@ -204,6 +212,11 @@ class SAPGUIRPA:
         '''returns title of a current window'''
         assert len(element_id) == 6, "id is too long"
         return self.__session.findById(element_id).text
+
+    def get_element_type(self, element_id):
+        '''takes in element_id
+        returns type of the element'''
+        return self.__session.findById(element_id).type
 
     def verify_element(self, element_id):
         '''returns true if element is found on a screen'''
@@ -229,18 +242,18 @@ class SAPGUIRPA:
 
         grid_view_shellcont = self.__session.findById(element_id)
         total_row_count = grid_view_shellcont.RowCount
-        scrapped_rows = list()
+        # visible_row_count = grid_view_shellcont.VisibleRowCount
         rows_to_scroll = 23
+        scrapped_rows = list()
 
         for row in range(0, total_row_count):
-
             shall_we_scroll = (
                 row % rows_to_scroll == 0 
                 and row + rows_to_scroll <= total_row_count
+                and rows_to_scroll != total_row_count
             )
-
             if shall_we_scroll:
-                grid_view_shellcont.currentCellRow = row + rows_to_scroll
+                grid_view_shellcont.currentCellRow = row + rows_to_scroll - 1
             elif total_row_count - row < rows_to_scroll:
                 grid_view_shellcont.currentCellRow = total_row_count - 1 
             
@@ -254,42 +267,43 @@ class SAPGUIRPA:
             scrapped_rows.append(row_content)
         return scrapped_rows
             
-    def confirm_screen(self, element_id, vkey=0):
-        ''' Takes element id of a confirmation button
-        and presses the button, or window's id and presses enter.
-        Additionally, it can take vkey value (in case we need to save transaction before continue to next screen) - by default is 0 (enter)
+    # def confirm_screen(self, element_id, vkey=0):
+    #     ''' Takes element id of a confirmation button
+    #     and presses the button, or window's id and presses enter.
+    #     Additionally, it can take vkey value (in case we need to save transaction before continue to next screen) - by default is 0 (enter)
 
-        Stores current name of a screen or a dialog for futher comparison,
-        and confirms user's actions.
-        Afterwards, it gets title again and compares titles. 
+    #     Stores current name of a screen or a dialog for futher comparison,
+    #     and confirms user's actions.
+    #     Afterwards, it gets title again and compares titles. 
 
-        returns true if we got to next screen or dialog'''
+    #     returns true if we got to next screen or dialog'''
         
-        if len(element_id) > 6: # single window has only 6 chars
-            # extract window id
-            window_id = re.search(r"wnd\[[0-9]\]", element_id).group()
-        else:
-            window_id = element_id
+    #     if len(element_id) > 6: # single window has only 6 chars
+    #         # extract window id
+    #         window_id = re.search(r"wnd\[[0-9]\]", element_id).group()
+    #     else:
+    #         window_id = element_id
 
-        curr_title = self.get_screen_title(window_id)
+    #     curr_title = self.get_screen_title(window_id)
+    #     curr_wnd_count = self.get_window_count() 
 
-        if len(element_id) > 6:
-            self.press_or_select(element_id)
-        else:
-            self.send_vkey(vkey, window_id)
+    #     if len(element_id) > 6:
+    #         self.press_or_select(element_id)
+    #     else:
+    #         self.send_vkey(vkey, window_id)
 
-        try:
-            next_title = self.get_screen_title(window_id)
-        except com_error:
-    # TODO: here we are getting issue with window number
-    #       we need to somehow identified wnd[] index for proper
-    #       functioning
-            next_title = self.get_screen_title("wnd[0]")
+    #     new_wnd_count = self.get_window_count()
 
-        if curr_title != next_title:
-            return True
-        else:
-            return False
+    #     if new_wnd_count < curr_wnd_count:
+    #         window_id = self.get_last_opened_window()
+
+
+    #     next_title = self.get_screen_title(window_id)
+
+    #     if curr_title != next_title:
+    #         return True
+    #     else:
+    #         return False
 
     def disconnect(self):
         self.__session = None
@@ -368,3 +382,33 @@ def gui_crash_report(title='Crash report',button_layout='just_ok'):
         elif event == 'Try again':
             window.Close()
             return True
+
+
+def gui_repeat_or_continue(title="Human action needed!", info_text=""):
+    '''
+    GUI window to prompt user to take action when some command
+    couldn't be executed. There are just two options:
+     - continue
+     - repeat last command
+
+    Takes in info about command which couldn't be executed and optionally takes info about next step in the the program flow
+    (recommended)
+    
+    My recommendation is using this within while loop to control the program flow. This function returns "repeat" or "next" string.
+    ''' 
+
+    gui_layout = [
+        [sg.Multiline(default_text=info_text, size=(70, 25))],
+        [sg.Text("")],
+        [sg.Button("Repeat last step"), sg.Button("Next step")]
+    ]
+
+    window = sg.Window(title, gui_layout)
+
+    while True:
+        event, __ = window.Read()
+        window.Close()
+        if event is None:
+            sys.exit()
+        else:
+            return event
