@@ -130,7 +130,7 @@ class SapGuiRpa:
         Returns nothing'''
         element = self.session.findById(element_id)
 
-        if element.type == "GuiTextField":
+        if element.type in ("GuiTextField", "GuiCTextField"):
             element.text = value
         elif element.type == "GuiComboBox":
             element.key = value
@@ -170,11 +170,7 @@ class SapGuiRpa:
         else:
             raise AssertionError(f'''{element_id} is not button, checkbox, , radiobutton, tab, or GuiMenu''')
 
-    def select_tab(self, element_id):
-        ''' takes element ID path
-        returns nothing'''
-        raise AssertionError("this method is not completed")
-
+    # NOTE: do not remove it as it might be used in some of existing scripts
     # def insert_values_standard(self, inputs=dict()):
     #     '''takes inputs in format {'type_of_field': [element_id, value]}
     #     supported types:
@@ -293,44 +289,6 @@ class SapGuiRpa:
         table_control = self.session.findById(element_id)
         table_control.GetAbsoluteRow(index).selected = True
 
-    # def confirm_screen(self, element_id, vkey=0):
-    #     ''' Takes element id of a confirmation button
-    #     and presses the button, or window's id and presses enter.
-    #     Additionally, it can take vkey value (in case we need to save transaction before continue to next screen) - by default is 0 (enter)
-
-    #     Stores current name of a screen or a dialog for futher comparison,
-    #     and confirms user's actions.
-    #     Afterwards, it gets title again and compares titles. 
-
-    #     returns true if we got to next screen or dialog'''
-        
-    #     if len(element_id) > 6: # single window has only 6 chars
-    #         # extract window id
-    #         window_id = re.search(r"wnd\[[0-9]\]", element_id).group()
-    #     else:
-    #         window_id = element_id
-
-    #     curr_title = self.get_screen_title(window_id)
-    #     curr_wnd_count = self.get_window_count() 
-
-    #     if len(element_id) > 6:
-    #         self.press_or_select(element_id)
-    #     else:
-    #         self.send_vkey(vkey, window_id)
-
-    #     new_wnd_count = self.get_window_count()
-
-    #     if new_wnd_count < curr_wnd_count:
-    #         window_id = self.get_last_opened_window()
-
-
-    #     next_title = self.get_screen_title(window_id)
-
-    #     if curr_title != next_title:
-    #         return True
-    #     else:
-    #         return False
-
     def disconnect(self):
         self.session = None
         self.connection = None
@@ -338,7 +296,6 @@ class SapGuiRpa:
         self.sap_gui_auto = None
 
 
-                
 def gui_dropdown_selection(title='Select one option', dropdown_list=list()):
     
     '''takes title of the gui and list of items for selection
@@ -443,7 +400,7 @@ def load_excel(path_to_excel):
     ''' reads excel and returns tuple of rows with header line'''
     workbook = load_workbook(filename=path_to_excel, data_only=True)
     input_data = workbook["INPUTS"]
-    all_rows = tuple(input_data.rows)
+    all_rows = input_data.rows
     return_list = [tuple(cell.value for cell in row) for row in all_rows]
     return tuple(return_list)    
 
