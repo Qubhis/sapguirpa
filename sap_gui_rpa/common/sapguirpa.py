@@ -116,9 +116,7 @@ class SapGuiRpa:
             11 -> Save
             81 -> PageUp
             82 -> PageDown
-            
-            "main" means MainWindow - "wnd[0]"
-            "modal" means ModalWindow - "wnd[1]"'''
+            '''
 
         if vkey not in (0, 3, 8, 11, 81, 82):
             raise AssertionError(f"Vkey {vkey} is not supported!")
@@ -222,6 +220,19 @@ class SapGuiRpa:
         '''takes in element_id
         returns type of the element'''
         return self.session.findById(element_id).type
+
+    def get_status_bar(self):
+        '''returns status bar data in format
+        :(message_type, text)
+        :message types are
+            - S success
+            - W warning
+            - E error
+            - A abort
+            - I information
+        '''
+        status_bar = self.session.findById("wnd[0]/sbar")
+        return (status_bar.MessageType, status_bar.text)
 
     def verify_element(self, element_id):
         '''returns true if element is found on a screen'''
