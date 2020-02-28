@@ -4,9 +4,9 @@ import re
 
 import PySimpleGUI as sg
 import win32com.client
+import pywintypes
 
 from openpyxl import load_workbook
-from pythoncom import com_error
 
 
 ## below snippet is for fast connection to first active session from cmd ##
@@ -71,7 +71,7 @@ class SapGuiRpa:
                         )
                 break
 
-            except com_error:
+            except pywintypes.com_error:
                 if gui_crash_report(title="Couldn't find any session...",
                                     button_layout="try_again"):
                     continue
@@ -189,13 +189,13 @@ class SapGuiRpa:
     #         else:
     #             self.press_or_select(element_id, input_data)
 
-    def get_window_count(self):
-        '''returns number of available windows in current session'''
-        return self.session.Children.count
+    # def get_window_count(self):
+    #     '''returns number of available windows in current session'''
+    #     return self.session.Children.count
 
-    def get_last_opened_window(self):
-        last_index = self.get_window_count() - 1
-        return self.session.Children(last_index).Name
+    # def get_last_opened_window(self):
+    #     last_index = self.get_window_count() - 1
+    #     return self.session.Children(last_index).Name
 
     def get_element_by_id(self, element_id):
         ''' takes element id
@@ -233,9 +233,9 @@ class SapGuiRpa:
     def verify_element(self, element_id):
         '''returns true if element is found on a screen'''
         try:
-            element = self.session.findById(element_id)
+            self.session.findById(element_id)
             return True
-        except com_error:
+        except pywintypes.com_error:
             return False
 
     def insert_row_gridview(self, gridview_id, row_index, tech_name, value):
