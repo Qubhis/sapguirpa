@@ -9,7 +9,7 @@ import pywintypes
 from openpyxl import load_workbook
 
 
-## below snippet is for fast connection to first active session from cmd ##
+## below snippet is for fast connection to first active session from command line ##
 # import win32com.client
 # sap_gui_auto = win32com.client.GetObject("SAPGUI")
 # application = sap_gui_auto.GetScriptingEngine
@@ -93,8 +93,8 @@ class SapGuiRpa:
     def start_transaction(self, transaction):
         self.session.StartTransaction(transaction)
 
-    def end_transaction(self, transaction):
-        self.session.EndTransaction(transaction)
+    def end_transaction(self):
+        self.session.EndTransaction()
 
     def lock_session_ui(self):
         self.session.LockSessionUI()
@@ -109,8 +109,9 @@ class SapGuiRpa:
         self.session.findById("wnd[0]").Restore()
 
     def send_vkey(self, vkey, window="wnd[0]"):
-        '''executes virtual key as per below
+        '''executes virtual key as per below - please add if missing
             0 -> Enter
+            2 -> F2
             3 -> F3
             8 -> F8
             11 -> Save
@@ -118,7 +119,7 @@ class SapGuiRpa:
             82 -> PageDown
             '''
 
-        if vkey not in (0, 3, 8, 11, 81, 82):
+        if vkey not in (0, 2, 3, 8, 11, 81, 82):
             raise AssertionError(f"Vkey {vkey} is not supported!")
         else:
             self.session.findById(window).sendVKey(vkey)
@@ -148,6 +149,7 @@ class SapGuiRpa:
          - GuiRadioButton
          - GuiTab
          - GuiMenu
+         - GuiLabel - in search results or just simple text label
  
         Returns nothing'''
         element = self.session.findById(element_id)
@@ -161,11 +163,16 @@ class SapGuiRpa:
                 element.selected = -1
             else:
                 element.selected = 0
+
         elif element.type == 'GuiRadioButton':
             if element.selected == False:
                 element.select()
+
         elif element.type in ('GuiTab', 'GuiMenu'):
             element.select()
+        
+        elif element.type == 'GuiLabel':
+            element.setFocus()
             
         else:
             raise AssertionError(f'''{element_id} is not button, checkbox, , radiobutton, tab, or GuiMenu''')
@@ -218,9 +225,8 @@ class SapGuiRpa:
         return self.session.findById(element_id).type
 
     def get_status_bar(self):
-        '''returns status bar data in format
-        :(message_type, text)
-        :message types are
+        '''returns status bar data in format tuple(message_type, text)
+         message types are
             - S success
             - W warning
             - E error
