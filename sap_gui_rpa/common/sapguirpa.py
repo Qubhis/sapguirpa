@@ -108,7 +108,7 @@ class SapGuiRpa:
     def gui_restore_size(self):
         self.session.findById("wnd[0]").Restore()
 
-    def send_vkey(self, vkey, window="wnd[0]"):
+    def send_vkey(self, vkey, window=None):
         '''executes virtual key as per below - please add if missing
             0 -> Enter
             2 -> F2
@@ -118,6 +118,8 @@ class SapGuiRpa:
             81 -> PageUp
             82 -> PageDown
             '''
+        if window is None:
+            window = "wnd[0]"
 
         if vkey not in (0, 2, 3, 8, 11, 81, 82):
             raise AssertionError(f"Vkey {vkey} is not supported!")
@@ -175,7 +177,7 @@ class SapGuiRpa:
             element.setFocus()
             
         else:
-            raise AssertionError(f'''{element_id} is not button, checkbox, , radiobutton, tab, or GuiMenu''')
+            raise AssertionError(f'''{element_id} is not button, checkbox, , radiobutton, tab, or menu.''')
 
     # NOTE: do not remove it as it might be used in some of existing scripts
     # def insert_values_standard(self, inputs=dict()):
