@@ -304,11 +304,14 @@ class SapGuiRpa:
         self.sap_gui_auto = None
 
 
-def gui_dropdown_selection(title='Select one option', dropdown_list=list()):
+def gui_dropdown_selection(title='Select one option', dropdown_list=None):
     
     '''takes title of the gui and list of items for selection
     creates gui window with dropdown selection
     returns value of selected item or None if closed'''
+
+    if dropdown_list is None:
+        dropdown_list = list()
 
     assert len(dropdown_list) > 0, "provided list is empty!"
 
