@@ -357,7 +357,7 @@ def gui_crash_report(title='Crash report',button_layout='just_ok'):
     if button_layout == 'just_ok':
         buttons.extend(sg.Button('OK'))
     elif button_layout == 'try_again':
-        buttons.extend(sg.Button('Try again'), sg.Button('Exit'))
+        buttons.extend([sg.Button('Try again'), sg.Button('Exit')])
     
     gui_layout = [
         [sg.Multiline(default_text=(traceback_string), size=(70, 25))],
