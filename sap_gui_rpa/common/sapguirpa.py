@@ -5,8 +5,7 @@ import re
 import PySimpleGUI as sg
 import win32com.client
 import pywintypes
-
-from openpyxl import load_workbook
+import openpyxl
 
 
 ## below snippet is for fast connection to first active session from command line ##
@@ -58,8 +57,12 @@ class SapGuiRpa:
                 session_indexes = dict()
                 session_titles = list()
                 
-                for i, conn in enumerate(self.application.Children):
-                    for j, sess in enumerate(conn.Children):
+                for i, conn in enumerate(self.application.Connections):
+                    for j, sess in enumerate(conn.Sessions):
+                        # if session is Busy, we won't get anything out of it
+                        #  neither Text property. Therefore we need to skip it
+                        if sess.Busy:
+                            continue
                         # child is GuiMainWindow obj
                         title = sess.Children(0).Text
                         session_titles.append(title)
@@ -217,7 +220,8 @@ class SapGuiRpa:
         return self.session.findById(element_id).text
     
     def get_screen_title(self, element_id):
-        '''returns title of a current window'''
+        '''returns text property of a current window'''
+        # TODO: review this method as it does the same thing and get_element_text
         assert len(element_id) == 6, "id is too long"
         return self.session.findById(element_id).text
 
@@ -409,7 +413,7 @@ def gui_repeat_or_continue(title="Human action needed!", info_text=""):
 
 def load_excel(path_to_excel):
     ''' reads excel and returns tuple of rows with header line'''
-    workbook = load_workbook(filename=path_to_excel, data_only=True)
+    workbook = openpyxl.load_workbook(filename=path_to_excel, data_only=True)
     input_data = workbook["INPUTS"]
     all_rows = input_data.rows
     return_list = [tuple(cell.value for cell in row) for row in all_rows]
