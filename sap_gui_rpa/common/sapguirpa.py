@@ -412,7 +412,11 @@ def gui_repeat_or_continue(title="Human action needed!", info_text=""):
             return event
 
 def load_excel(path_to_excel):
-    ''' reads excel and returns tuple of rows with header line'''
+    ''' 
+    reads excel and returns tuple of tuples where first tuple
+    is header line and others are each row
+    NOTE: values to be loaded must be in sheet named 'INPUTS' 
+    '''
     workbook = openpyxl.load_workbook(filename=path_to_excel, data_only=True)
     input_data = workbook["INPUTS"]
     all_rows = input_data.rows
