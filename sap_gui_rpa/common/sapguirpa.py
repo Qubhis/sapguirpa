@@ -106,10 +106,10 @@ class SapGuiRpa:
         self.session.UnlockSessionUI()
 
     def gui_maximize(self):
-        self.session.findById("wnd[0]").Maximize()
+        self.get_element_by_id("wnd[0]").Maximize()
 
     def gui_restore_size(self):
-        self.session.findById("wnd[0]").Restore()
+        self.get_element_by_id("wnd[0]").Restore()
 
     def send_vkey(self, vkey, window=None):
         '''executes virtual key as per below - please add if missing
@@ -127,14 +127,14 @@ class SapGuiRpa:
         if vkey not in (0, 2, 3, 8, 11, 81, 82):
             raise AssertionError(f"Vkey {vkey} is not supported!")
         else:
-            self.session.findById(window).sendVKey(vkey)
+            self.get_element_by_id(window).sendVKey(vkey)
 
     def insert_value(self, element_id, value):
         '''takes element ID path and value to be inserted
         Inserts the value to the field. 
         
         Returns nothing'''
-        element = self.session.findById(element_id)
+        element = self.get_element_by_id(element_id)
 
         if element.type in ("GuiTextField", "GuiCTextField"):
             element.text = value
@@ -217,18 +217,18 @@ class SapGuiRpa:
     def get_element_text(self, element_id):
         ''' takes element ID,
         returns value of the element - if string value'''
-        return self.session.findById(element_id).text
+        return self.get_element_by_id(element_id).text
     
     def get_screen_title(self, element_id):
         '''returns text property of a current window'''
-        # TODO: review this method as it does the same thing and get_element_text
+# TODO: review this method as it does the same thing and get_element_text
         assert len(element_id) == 6, "id is too long"
-        return self.session.findById(element_id).text
+        return self.get_element_text(element_id)
 
     def get_element_type(self, element_id):
         '''takes in element_id
         returns type of the element'''
-        return self.session.findById(element_id).type
+        return self.get_element_by_id(element_id).type
 
     def get_status_bar(self):
         '''returns status bar data in format tuple(message_type, text)
@@ -239,20 +239,20 @@ class SapGuiRpa:
             - A abort
             - I information
         '''
-        status_bar = self.session.findById("wnd[0]/sbar")
+        status_bar = self.get_element_by_id("wnd[0]/sbar")
         return (status_bar.MessageType, status_bar.text)
 
     def verify_element(self, element_id):
         '''returns true if element is found on a screen'''
         try:
-            self.session.findById(element_id)
+            self.get_element_by_id(element_id)
             return True
         except pywintypes.com_error:
             return False
 
     def insert_row_gridview(self, gridview_id, row_index, tech_name, value):
         '''inserst values into gridview table in to given index'''
-        gridview = self.session.findById(gridview_id)
+        gridview = self.get_element_by_id(gridview_id)
         gridview.modifyCell(row_index, tech_name, value)
     
     def grid_view_get_cell_value(self, element_id, cell_name, row_index):
@@ -260,7 +260,7 @@ class SapGuiRpa:
         of a table cell, and index of row being read
 
         returns value from the cell in a string format'''
-        grid_view_shellcont = self.session.findById(element_id)
+        grid_view_shellcont = self.get_element_by_id(element_id)
         return grid_view_shellcont.GetCellValue(row_index, cell_name)
 
     def grid_view_scrape_rows(self, element_id, cells):
@@ -269,7 +269,7 @@ class SapGuiRpa:
 
         returns list of lists of cell values '''
 
-        grid_view_shellcont = self.session.findById(element_id)
+        grid_view_shellcont = self.get_element_by_id(element_id)
         total_row_count = grid_view_shellcont.RowCount
         # visible_row_count = grid_view_shellcont.VisibleRowCount
         rows_to_scroll = grid_view_shellcont.VisibleRowCount
@@ -298,7 +298,7 @@ class SapGuiRpa:
 
     def table_select_absolute_row(self, element_id, index):
 
-        table_control = self.session.findById(element_id)
+        table_control = self.get_element_by_id(element_id)
         table_control.GetAbsoluteRow(index).selected = True
 
     def disconnect(self):
