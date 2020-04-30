@@ -148,7 +148,7 @@ class SapGuiRpa:
     def press_or_select(self, element_id, check=True):
         '''takes element ID path, optionally check=False to indicate
         desire for un-checking a checkbox.
-        Acts accordingly based on .type property:
+        Action press or select is based on .type property of the element:
          - GuiButton
          - GuiCheckBox
          - GuiRadioButton
@@ -157,7 +157,7 @@ class SapGuiRpa:
          - GuiLabel - in search results or just simple text label
  
         Returns nothing'''
-        element = self.session.findById(element_id)
+        element = self.get_element_by_id(element_id)
         
         if element.type == 'GuiButton':
             element.setFocus()
@@ -411,13 +411,14 @@ def gui_repeat_or_continue(title="Human action needed!", info_text=""):
         else:
             return event
 
-def load_excel(path_to_excel):
+def read_excel_file(path_to_excel_file):
     ''' 
     reads excel and returns tuple of tuples where first tuple
     is header line and others are each row
     NOTE: values to be loaded must be in sheet named 'INPUTS' 
     '''
-    workbook = openpyxl.load_workbook(filename=path_to_excel, data_only=True)
+    workbook = openpyxl.load_workbook(filename=path_to_excel_file,
+                                      data_only=True)
     input_data = workbook["INPUTS"]
     all_rows = input_data.rows
     return_list = [tuple(cell.value for cell in row) for row in all_rows]
