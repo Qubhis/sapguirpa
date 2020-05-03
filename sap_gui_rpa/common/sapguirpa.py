@@ -218,12 +218,6 @@ class SapGuiRpa:
         ''' takes element ID,
         returns value of the element - if string value'''
         return self.get_element_by_id(element_id).text
-    
-    def get_screen_title(self, element_id):
-        '''returns text property of a current window'''
-# TODO: review this method as it does the same thing and get_element_text
-        assert len(element_id) == 6, "id is too long"
-        return self.get_element_text(element_id)
 
     def get_element_type(self, element_id):
         '''takes in element_id
