@@ -182,33 +182,6 @@ class SapGuiRpa:
         else:
             raise AssertionError(f'''{element_id} is not button, checkbox, , radiobutton, tab, or menu.''')
 
-    # NOTE: do not remove it as it might be used in some of existing scripts
-    # def insert_values_standard(self, inputs=dict()):
-    #     '''takes inputs in format {'type_of_field': [element_id, value]}
-    #     supported types:
-    #     - 'button' -> value is ""
-    #     - 'checkbox' -> value is True for checked and False for opposite
-    #     - 'text_field' -> desired value, "" for empty field 
-    #     '''
-    #     assert len(inputs) > 0, "provided inputs are empty!"
-
-    #     for key, value in inputs.items():
-    #         element_id = value[0]
-    #         input_data = value[1]
-
-    #         if key == 'text_field':
-    #             self.insert_value(element_id, input_data)
-    #         else:
-    #             self.press_or_select(element_id, input_data)
-
-    # def get_window_count(self):
-    #     '''returns number of available windows in current session'''
-    #     return self.session.Children.count
-
-    # def get_last_opened_window(self):
-    #     last_index = self.get_window_count() - 1
-    #     return self.session.Children(last_index).Name
-
     def get_element_by_id(self, element_id):
         ''' takes element id
         , returns element as an object -> we can use properties and methods'''
