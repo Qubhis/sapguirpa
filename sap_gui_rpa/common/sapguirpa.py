@@ -324,9 +324,9 @@ def gui_crash_report(title='Crash report',button_layout='just_ok'):
                                                   exc_traceback)
     
     # button and gui layout preparation
-    buttons = list()
+    buttons = []
     if button_layout == 'just_ok':
-        buttons.extend(sg.Button('OK'))
+        buttons.extend([sg.Button('OK')])
     elif button_layout == 'try_again':
         buttons.extend([sg.Button('Try again'), sg.Button('Exit')])
     
