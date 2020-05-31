@@ -120,6 +120,8 @@ class SapGuiRpa:
             11 -> Save
             81 -> PageUp
             82 -> PageDown
+
+        window is by default 'wnd[0]' if not provided
             '''
         if window is None:
             window = "wnd[0]"
@@ -352,9 +354,11 @@ def gui_crash_report(title='Crash report',button_layout='just_ok'):
 def gui_repeat_or_continue(title="Human action needed!", info_text=""):
     '''
     GUI window to prompt user to take action when some command
-    couldn't be executed. There are just two options:
+    couldn't be executed. There are three options:
      - continue
      - repeat last command
+     - quit or close button at the top right corner
+       will return False
 
     Takes in info about command which couldn't be executed and optionally takes info about next step in the the program flow
     (recommended)
@@ -365,7 +369,7 @@ def gui_repeat_or_continue(title="Human action needed!", info_text=""):
     gui_layout = [
         [sg.Multiline(default_text=info_text, size=(70, 25))],
         [sg.Text("")],
-        [sg.Button("Repeat last step"), sg.Button("Next step")]
+        [sg.Button("Repeat last step"), sg.Button("Continue"), sg.Button("Quit")]
     ]
 
     window = sg.Window(title, gui_layout)
@@ -373,8 +377,8 @@ def gui_repeat_or_continue(title="Human action needed!", info_text=""):
     while True:
         event, __ = window.Read()
         window.Close()
-        if event is None:
-            sys.exit()
+        if event is None or event == 'Quit':
+            return False
         else:
             return event
 
@@ -388,7 +392,7 @@ def read_excel_file(path_to_excel_file):
                                       data_only=True)
     input_data = workbook["INPUTS"]
     all_rows = input_data.rows
-    return_list = [tuple(cell.value for cell in row) for row in all_rows]
+    return_list = [tuple("" if cell.value is None else cell.value for cell in row) for row in all_rows]
     return tuple(return_list)    
 
 
