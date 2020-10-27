@@ -136,6 +136,7 @@ class SapGuiRpa:
         Inserts the value to the field. 
         
         Returns nothing'''
+        
         element = self.get_element_by_id(element_id)
 
         if element.type in ("GuiTextField", "GuiCTextField"):
