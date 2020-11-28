@@ -15,7 +15,7 @@ Please note that the documentation of the code is not the best. The code can be 
 >>> sap = SapGuiRpa()
 >>> sap.attach_to_session()
 ```
-![image of select session gui popup]()
+![attach to session](img/attach_to_session.jpg)
 ```python
 >>> sap.start_transaction("ME21N")
 ```
