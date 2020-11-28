@@ -7,34 +7,26 @@ import win32com.client
 import pywintypes
 import openpyxl
 
-
-## below snippet is for fast connection to first active session from command line ##
-# import win32com.client
-# sap_gui_auto = win32com.client.GetObject("SAPGUI")
-# application = sap_gui_auto.GetScriptingEngine
-# connection = application.Children(0)
-# session = connection.Children(0)
-
 '''
-TODO:
-1. read SAP GUI scripting API documentation of application and session object
-    - application:
-        - .Utils.ShowMessageBox(
-                            title, 
-                            text,
-                            .Utils.<MSG_TYPE>,
-                            .Utils.<MSG_OPTION>) - SAP GUI popups
-
-    - session:
-        - .SendCommand("/nend") simulates inserting into command field 
-          and pressing enter
-
-NOTE: 
-This wrapper doesn't serve for automatic login as storing passwords 
-inside a script is not safe. You can write your own bindings in case 
-you use a password manager. 
+NOTE: You can see several functions except the class which I wrote at the very
+beginning of my days with SAP GUI scripting. Those can be omitted except 
+two of them, gui_crash_report and gui_dropdown_selection as those two are 
+used in method attach_to_session.  
 '''
+
+
 class SapGuiRpa:
+    '''
+    Wrapper around GuiApplication object to simplify script development.
+    Code should be mostly self-explanatory, but in case it's not, please use
+    SAP official documentation for more information:
+    https://help.sap.com/viewer/b47d018c3b9b45e897faf66a6c0885a8/760.05/en-US/babdf65f4d0a4bd8b40f5ff132cb12fa.html
+
+    This wrapper doesn't serve for automatic login as storing passwords 
+    inside a script is not safe. You can write your own bindings in case 
+    you use a password manager or env files.
+
+    '''
 
     def __init__(self):
         self.sap_gui_auto = None
@@ -46,8 +38,9 @@ class SapGuiRpa:
     def attach_to_session(self):
         ''' 
         Simply gets SAPGUI object and scripting engine, scans for all
-        connections and their sessions and prompts user to select session.
-        Changes attributes of SAPGUIRPA instance.
+        connections and their sessions, and prompts user to select a session
+        which our instance will attach to.
+        Uses PySimpleGui for the session selection (or errors)
         '''
         while True:
             try:
@@ -60,7 +53,7 @@ class SapGuiRpa:
                 for i, conn in enumerate(self.application.Connections):
                     for j, sess in enumerate(conn.Sessions):
                         # if session is Busy, we won't get anything out of it
-                        #  neither Text property. Therefore we need to skip it
+                        # neither a Text property. Therefore we need to skip it
                         if sess.Busy:
                             continue
                         # child is GuiMainWindow obj
@@ -84,7 +77,7 @@ class SapGuiRpa:
         title = gui_dropdown_selection('Select SAP session for scripting',
                                        session_titles)
         if title is None:
-            sg.Popup("Program ended. Press OK.")
+            sg.Popup("Nothing selected. Program will end.")
             sys.exit()
         
         conn_idx = session_indexes[title]['conn_idx']
@@ -187,7 +180,8 @@ class SapGuiRpa:
 
     def get_element_by_id(self, element_id):
         ''' takes element id
-        , returns element as an object -> we can use properties and methods'''
+        , returns element as an object -> we can use properties and methods
+        from GuiAplication object (SAPGUI) when needed'''
         return self.session.findById(element_id)
 
     def get_element_text(self, element_id):
