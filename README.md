@@ -8,7 +8,7 @@ I'm making this repository public as I think that it might help some SAP consult
  - transactional data creation for new functionality testing (if not using GUI's built-in recording tool)
  - prototyping of RPA(RDA) robots
 
-Please note that the documentation of the code is not the best. The code can be optimized and some parts can be changed for better readability, but before I get to that (and if), I will appreciate any comments or ideas. Questions are welcomed as well :). 
+Please note that the documentation of the code is rather none than some. The code can be optimized and some parts can be changed for better readability. But before I get to all of that (and if), I will appreciate any comments or ideas. Questions are welcomed as well :). 
 
 ### Quick usage from a command line:
 ```python
