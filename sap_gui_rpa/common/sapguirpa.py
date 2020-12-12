@@ -1,11 +1,5 @@
-import sys
-import traceback
-import re
-
-import PySimpleGUI as sg
 import win32com.client
 import pywintypes
-import openpyxl
 
 '''
 NOTE: You can see several functions except the class which I wrote at the very
@@ -14,7 +8,6 @@ two of them, gui_crash_report and gui_dropdown_selection as those two are
 used in method attach_to_session.  
 '''
 
-
 class SapGuiRpa:
     '''
     Wrapper around GuiApplication object to simplify script development.
@@ -22,87 +15,84 @@ class SapGuiRpa:
     SAP official documentation for more information:
     https://help.sap.com/viewer/b47d018c3b9b45e897faf66a6c0885a8/760.05/en-US/babdf65f4d0a4bd8b40f5ff132cb12fa.html
 
-    This wrapper doesn't serve for automatic login as storing passwords 
-    inside a script is not safe. You can write your own bindings in case 
-    you use a password manager or env files.
-
+    Supports attaching to the running instance of SAP GUI through the Running
+    Object Table only. This wrapper doesn't support automation of logging in.
     '''
-
     def __init__(self):
-        self.sap_gui_auto = None
+        self.sap_gui_object = None
         self.application = None
         self.connection = None
         self.session = None
 
 
-    def attach_to_session(self):
-        ''' 
-        Simply gets SAPGUI object and scripting engine, scans for all
-        connections and their sessions, and prompts user to select a session
-        which our instance will attach to.
-        Uses PySimpleGui for the session selection (or errors)
+    def _get_available_sessions(self):
+        '''scans for all connections and their sessions of SAP Gui instance.
+
+        returns dictionary with session titles and indexes for connection
         '''
-        while True:
-            try:
-                self.sap_gui_auto = win32com.client.GetObject("SAPGUI")
-                self.application = self.sap_gui_auto.GetScriptingEngine
-
-                session_indexes = dict()
-                session_titles = list()
-                
-                for i, conn in enumerate(self.application.Connections):
-                    for j, sess in enumerate(conn.Sessions):
-                        # if session is Busy, we won't get anything out of it
-                        # neither a Text property. Therefore we need to skip it
-                        if sess.Busy:
-                            continue
-                        # child is GuiMainWindow obj
-                        title = sess.Children(0).Text
-                        session_titles.append(title)
-                        session_indexes.update(
-                            {title: {
-                                'conn_idx': i,
-                                'sess_idx': j,
-                            }}
-                        )
-                break
-
-            except pywintypes.com_error:
-                if gui_crash_report(title="Couldn't find any session...",
-                                    button_layout="try_again"):
+        available_sessions = dict()
+        for conn_index, connection in enumerate(self.application.Connections):
+            for sess_index, session in enumerate(connection.Sessions):
+                if session.Busy:
                     continue
-                else:
-                    break
+                # get title of the main window - only child of Session object
+                title = session.Children(0).Text
+                session_details = {
+                    title: {
+                        "conn_index": conn_index,
+                        "sess_index": sess_index
+                    }
+                }
+                available_sessions.update(session_details)
+        
+        return available_sessions
 
-        title = gui_dropdown_selection('Select SAP session for scripting',
-                                       session_titles)
-        if title is None:
-            sg.Popup("Nothing selected. Program will end.")
-            sys.exit()
-        
-        conn_idx = session_indexes[title]['conn_idx']
-        sess_idx = session_indexes[title]['sess_idx']
-        
-        self.connection = self.application.Children(conn_idx)
-        self.session = self.connection.Children(sess_idx)
+
+    def attach_to_session(self, mode="cli"):
+        ''' 
+        Lists all available, non-busy sessions and prompts for selection 
+        through command line interface by default, or through GUI window (PySimpleGui)
+
+        Throws SapLogonNotStarted if SAP Logon is not running.
+
+        Updates class instance attributes.
+        '''
+        try:
+            self.sap_gui_object = win32com.client.GetObject("SAPGUI")
+        except pywintypes.com_error as com_error:
+            if com_error.args[0] == -2147221020:
+                raise SapLogonNotStarted
+
+        self.application = self.sap_gui_object.GetScriptingEngine
+
+        available_sessions = self._get_available_sessions()
+        if not available_sessions:
+            raise NoAvailableSession
+
+        # select one of available session
+        selected_session = select_session(available_sessions, mode)
+        conn_index = available_sessions[selected_session]['conn_index']
+        sess_index = available_sessions[selected_session]['sess_index']
+        # update attributes
+        self.connection = self.application.Children(conn_index)
+        self.session = self.connection.Children(sess_index)
+
 
     def start_transaction(self, transaction):
         self.session.StartTransaction(transaction)
 
+
     def end_transaction(self):
         self.session.EndTransaction()
 
-    def lock_session_ui(self):
-        self.session.LockSessionUI()
-
-    def unlock_session_ui(self):
-        self.session.UnlockSessionUI()
 
     def gui_maximize(self):
         self.get_element_by_id("wnd[0]").Maximize()
 
+
     def gui_restore_size(self):
         self.get_element_by_id("wnd[0]").Restore()
+
 
     def send_vkey(self, vkey, window=None):
         '''executes virtual key as per below - please add if missing
@@ -124,6 +114,7 @@ class SapGuiRpa:
         else:
             self.get_element_by_id(window).sendVKey(vkey)
 
+
     def insert_value(self, element_id, value):
         '''takes element ID path and value to be inserted
         Inserts the value to the field. 
@@ -139,7 +130,6 @@ class SapGuiRpa:
         else:
             raise AssertionError(f"{element_id} cannot be filled with value/key {value}")
 
-        
 
     def press_or_select(self, element_id, check=True):
         '''takes element ID path, optionally check=False to indicate
@@ -178,21 +168,25 @@ class SapGuiRpa:
         else:
             raise AssertionError(f'''{element_id} is not button, checkbox, , radiobutton, tab, or menu.''')
 
+
     def get_element_by_id(self, element_id):
         ''' takes element id
         , returns element as an object -> we can use properties and methods
         from GuiAplication object (SAPGUI) when needed'''
         return self.session.findById(element_id)
 
+
     def get_element_text(self, element_id):
         ''' takes element ID,
         returns value of the element - if string value'''
         return self.get_element_by_id(element_id).text
 
+
     def get_element_type(self, element_id):
         '''takes in element_id
         returns type of the element'''
         return self.get_element_by_id(element_id).type
+
 
     def get_status_bar(self):
         '''returns status bar data in format tuple(message_type, text)
@@ -206,6 +200,7 @@ class SapGuiRpa:
         status_bar = self.get_element_by_id("wnd[0]/sbar")
         return (status_bar.MessageType, status_bar.text)
 
+
     def verify_element(self, element_id):
         '''returns true if element is found on a screen'''
         try:
@@ -214,11 +209,13 @@ class SapGuiRpa:
         except pywintypes.com_error:
             return False
 
+
     def insert_row_gridview(self, gridview_id, row_index, tech_name, value):
         '''inserst values into gridview table in to given index'''
         gridview = self.get_element_by_id(gridview_id)
         gridview.modifyCell(row_index, tech_name, value)
     
+
     def grid_view_get_cell_value(self, element_id, cell_name, row_index):
         ''' takes element id of a GridViewCtrl.1 object and technical name
         of a table cell, and index of row being read
@@ -226,6 +223,7 @@ class SapGuiRpa:
         returns value from the cell in a string format'''
         grid_view_shellcont = self.get_element_by_id(element_id)
         return grid_view_shellcont.GetCellValue(row_index, cell_name)
+
 
     def grid_view_scrape_rows(self, element_id, cells):
         ''' takes element id of a grid view and list of cells to be fetched
@@ -235,7 +233,6 @@ class SapGuiRpa:
 
         grid_view_shellcont = self.get_element_by_id(element_id)
         total_row_count = grid_view_shellcont.RowCount
-        # visible_row_count = grid_view_shellcont.VisibleRowCount
         rows_to_scroll = grid_view_shellcont.VisibleRowCount
         scrapped_rows = list()
 
@@ -260,40 +257,64 @@ class SapGuiRpa:
             scrapped_rows.append(row_content)
         return scrapped_rows
 
-    def table_select_absolute_row(self, element_id, index):
 
+    def table_select_absolute_row(self, element_id, index):
         table_control = self.get_element_by_id(element_id)
         table_control.GetAbsoluteRow(index).selected = True
+
 
     def disconnect(self):
         self.session = None
         self.connection = None
         self.application = None
-        self.sap_gui_auto = None
+        self.sap_gui_object = None
+
+
+def select_session(available_sessions, mode="cli"):
+    '''Prompts user to select one entry from available_sessions either via 
+    command line interface or GUI window created by PySimpleGui library'''
+    if mode == "cli":
+        choices = {index + 1: key for index, key in enumerate(available_sessions.keys())}
+        print("These are available sessions:")
+        for index,key in choices.items():
+            print(f"\t{index}.\t{key}")
+        
+        user_prompted = True
+        while user_prompted:
+            user_choice = int(input("Please provide corresponding number one of the above items:"))
+            if user_choice not in choices:
+                print("...invalid input, please repeat:")
+            else:
+                session_title = choices[user_choice]
+                user_prompted = False
+    
+    elif mode == "gui":
+        session_titles = list(available_sessions.keys())
+        session_title = gui_dropdown_selection(
+            title='Select SAP session for scripting',
+            dropdown_list=session_titles
+        )
+
+    return session_title
 
 
 def gui_dropdown_selection(title='Select one option', dropdown_list=None):
-    
     '''takes title of the gui and list of items for selection
     creates gui window with dropdown selection
     returns value of selected item or None if closed'''
-
+    import PySimpleGUI as sg
+    
     if dropdown_list is None:
         dropdown_list = list()
-
     assert len(dropdown_list) > 0, "provided list is empty!"
-
     layout = [
         [sg.Text('Please choose one of below options:')],
         [sg.InputCombo(dropdown_list, size=(40, 10))],
         [sg.Submit(), sg.Text("", size=(16,1)), sg.Exit()]
     ]
-
     window = sg.Window(title, layout)
-
     while True:
         event, value = window.Read()
-
         if event is None or event == 'Exit':
             window.Close()
             return None
@@ -303,92 +324,17 @@ def gui_dropdown_selection(title='Select one option', dropdown_list=None):
             return value[0]
 
 
-def gui_crash_report(title='Crash report',button_layout='just_ok'):
-    '''takes text for title of gui and button layout
-    - displays traceback info in gui window with few button layouts:
-        - 'try_again' -> shows buttons 'Try again' and 'Exit'
-        - 'just_ok' -> shows only 'OK' button
-    
-    returns None if closed or canceled by user
-    returns True if Try again
-    '''
-    
-    # extract exception traceback info
-    exc_type, exc_value, exc_traceback = sys.exc_info()
-    # get formated list of it
-    traceback_string = traceback.format_exception(exc_type,
-                                                  exc_value,
-                                                  exc_traceback)
-    
-    # button and gui layout preparation
-    buttons = []
-    if button_layout == 'just_ok':
-        buttons.extend([sg.Button('OK')])
-    elif button_layout == 'try_again':
-        buttons.extend([sg.Button('Try again'), sg.Button('Exit')])
-    
-    gui_layout = [
-        [sg.Multiline(default_text=(traceback_string), size=(70, 25))],
-        [sg.Text('')],
-        buttons
-    ]
-
-    window = sg.Window(title, gui_layout)
-    # read users action and act accordingly
-    while True:
-        event, __ = window.Read()
-        
-        if event is None or event == 'Exit' or event == 'OK':
-            window.Close()
-            return None
-        elif event == 'Try again':
-            window.Close()
-            return True
+class SapLogonNotStarted(Exception):
+    def __init__(self):
+        message = "SAP Logon instance has not been found."\
+                  "Please ensure you've opened SAP Logon and it's running."
+        super().__init__(message)
 
 
-def gui_repeat_or_continue(title="Human action needed!", info_text=""):
-    '''
-    GUI window to prompt user to take action when some command
-    couldn't be executed. There are three options:
-     - continue
-     - repeat last command
-     - quit or close button at the top right corner
-       will return False
-
-    Takes in info about command which couldn't be executed and optionally takes info about next step in the the program flow
-    (recommended)
-    
-    My recommendation is using this within while loop to control the program flow. This function returns "repeat" or "next" string.
-    ''' 
-
-    gui_layout = [
-        [sg.Multiline(default_text=info_text, size=(70, 25))],
-        [sg.Text("")],
-        [sg.Button("Repeat last step"), sg.Button("Continue"), sg.Button("Quit")]
-    ]
-
-    window = sg.Window(title, gui_layout)
-
-    while True:
-        event, __ = window.Read()
-        window.Close()
-        if event is None or event == 'Quit':
-            return False
-        else:
-            return event
-
-def read_excel_file(path_to_excel_file):
-    ''' 
-    reads excel and returns tuple of tuples where first tuple
-    is header line and others are each row
-    NOTE: values to be loaded must be in sheet named 'INPUTS' 
-    '''
-    workbook = openpyxl.load_workbook(filename=path_to_excel_file,
-                                      data_only=True)
-    input_data = workbook["INPUTS"]
-    all_rows = input_data.rows
-    return_list = [tuple("" if cell.value is None else cell.value for cell in row) for row in all_rows]
-    return tuple(return_list)    
+class NoAvailableSession(Exception):
+    def __init__(self):
+        message = "Either all sessions are busy or no session is opened."
+        super().__init__(message)
 
 
 if __name__ == "__main__":
