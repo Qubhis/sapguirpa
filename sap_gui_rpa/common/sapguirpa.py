@@ -275,7 +275,7 @@ def select_session(available_sessions, mode="cli"):
     command line interface or GUI window created by PySimpleGui library'''
     if mode == "cli":
         choices = {index + 1: key for index, key in enumerate(available_sessions.keys())}
-        print("These are available sessions:")
+        print("These sessions are available:")
         for index,key in choices.items():
             print(f"\t{index}.\t{key}")
         
