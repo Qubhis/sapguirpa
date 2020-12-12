@@ -17,7 +17,9 @@ Please note that the documentation of the code is not the best. The code can be 
 >>> sap.attach_to_session(mode="gui")
 ```
 PySimpleGui is used for GUI windows, but I plan switching to standard library tkinter in future.
+
 ![attach to session](img/attach_to_session.jpg)
+
 
 If mode is not provided to method "attach_to_session", you are prompt for session selection via CLI.
 ```python
