@@ -29,7 +29,7 @@ class SapGuiRpa:
         connection between SAP GUI and an application server - GuiConnection
 
     session : win32com.clientCDispatch
-        access point for applications - GuiSession
+        point for performing specific actions by users (scripts)- GuiSession
     """
 
     def __init__(self):
@@ -105,8 +105,8 @@ class SapGuiRpa:
 
         # select one of available session
         selected_session = select_session(available_sessions, mode)
-        conn_index = available_sessions[selected_session]['conn_index']
-        sess_index = available_sessions[selected_session]['sess_index']
+        conn_index = available_sessions[selected_session]["conn_index"]
+        sess_index = available_sessions[selected_session]["sess_index"]
         # update remaining attributes
         self.connection = self.application.Children(conn_index)
         self.session = self.connection.Children(sess_index)
@@ -214,7 +214,7 @@ class SapGuiRpa:
 
         Modifies attribute 'selected' if the element is a checkbox
 
-        supported elements:
+        Supported elements:
          - GuiButton
          - GuiCheckBox
          - GuiRadioButton
@@ -238,28 +238,28 @@ class SapGuiRpa:
         """
         element = self.get_element_by_id(element_id)
         
-        if element.type == 'GuiButton':
+        if element.type == "GuiButton":
             element.setFocus()
             element.press()
 
-        elif element.type == 'GuiCheckBox':
+        elif element.type == "GuiCheckBox":
             if check:
                 element.selected = -1
             else:
                 element.selected = 0
 
-        elif element.type == 'GuiRadioButton':
+        elif element.type == "GuiRadioButton":
             if element.selected == False:
                 element.select()
 
-        elif element.type in ('GuiTab', 'GuiMenu'):
+        elif element.type in ("GuiTab", "GuiMenu"):
             element.select()
         
-        elif element.type == 'GuiLabel':
+        elif element.type == "GuiLabel":
             element.setFocus()
             
         else:
-            raise AssertionError(f'''{element_id} is not button, checkbox, , radiobutton, tab, or menu.''')
+            raise AssertionError(f"{element_id} is not label, button, checkbox, radiobutton, tab, or menu.")
 
 
     def get_element_by_id(self, element_id):
@@ -432,7 +432,7 @@ def select_session(available_sessions, mode="cli"):
     elif mode == "gui":
         session_titles = list(available_sessions.keys())
         session_title = gui_dropdown_selection(
-            title='Select SAP session for scripting',
+            title="Select SAP session for scripting",
             dropdown_list=session_titles
         )
 
@@ -446,18 +446,18 @@ def gui_dropdown_selection(title, dropdown_list):
     import PySimpleGUI as sg
     
     layout = [
-        [sg.Text('Please choose one of below options:')],
+        [sg.Text("Please choose one of below options:")],
         [sg.InputCombo(dropdown_list, size=(40, 10))],
         [sg.Submit(), sg.Text("", size=(16,1)), sg.Exit()]
     ]
     window = sg.Window(title, layout)
     while True:
         event, value = window.Read()
-        if event is None or event == 'Exit':
+        if event is None or event == "Exit":
             window.Close()
             return None
 
-        elif event == 'Submit':
+        elif event == "Submit":
             window.Close()
             return value[0]
 
