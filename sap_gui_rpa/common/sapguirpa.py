@@ -3,6 +3,7 @@ import pywintypes
 
 
 class SapGuiRpa:
+    
     """Wrapper around GuiApplication object to simplify script development.
 
     Code should be mostly self-explanatory, but in case it's not, please use
