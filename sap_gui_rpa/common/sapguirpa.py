@@ -349,56 +349,112 @@ class SapGuiRpa:
             return False
 
 
-    def insert_row_gridview(self, gridview_id, row_index, tech_name, value):
-        '''inserst values into gridview table in to given index'''
+    def insert_value_gridview_cell(
+            self, gridview_id, row_index, column_name, value):
+        """inserts value of a cell located at given row index and column 
+        represented by its technical name
+
+        Parameters
+        ----------
+        gridview_id : str   
+            e.g. "wnd[0]/usr/.../cntlGRIDCONTROL/shellcont/shell"
+
+        row_index : int
+            index of a row within GuiGridView object
+
+        column_name : str
+            technical name of a cell in GuiGridView object
+
+        value : str
+            value to be passed into the cell
+        """
         gridview = self.get_element_by_id(gridview_id)
-        gridview.modifyCell(row_index, tech_name, value)
+        gridview.modifyCell(row_index, column_name, value)
     
 
-    def grid_view_get_cell_value(self, element_id, cell_name, row_index):
-        ''' takes element id of a GridViewCtrl.1 object and technical name
-        of a table cell, and index of row being read
+    def get_cell_value_grid_view(self, gridview_id, row_index, column_name):
+        """returns value of a cell located at given row index and column name
+        withing GuiGridView object
 
-        returns value from the cell in a string format'''
-        grid_view_shellcont = self.get_element_by_id(element_id)
-        return grid_view_shellcont.GetCellValue(row_index, cell_name)
+        Parameters
+        ----------
+        gridview_id : str
+            e.g. "wnd[0]/usr/.../cntlGRIDCONTROL/shellcont/shell"
+
+        row_index : int
+            index of a row within GuiGridView object
+
+        column_name : str
+            technical name of a cell in GuiGridView object
+
+        Returns
+        -------
+        {str}
+            value of the cell
+        """
+        grid_view_shell_container = self.get_element_by_id(gridview_id)
+        return grid_view_shell_container.GetCellValue(row_index, column_name)
 
 
-    def grid_view_scrape_rows(self, element_id, cells):
-        ''' takes element id of a grid view and list of cells to be fetched
-        from each row
+    def scrape_rows_grid_view(self, gridview_id, column_names):
+        """simply gets values from all rows and provided columns (cells) and
+        returns values back as list of lists where each list contains cell
+        values of a row in the order they were provided
 
-        returns list of lists of cell values '''
+        Parameters
+        ----------
+        gridview_id : str
+            e.g. "wnd[0]/usr/.../cntlGRIDCONTROL/shellcont/shell"
 
-        grid_view_shellcont = self.get_element_by_id(element_id)
+        column_names : list
+            list of column names 
+
+        Returns
+        -------
+        {list of lists}
+            Each list contains cell values of a row within GuiGridView object
+        """
+        grid_view_shellcont = self.get_element_by_id(gridview_id)
         total_row_count = grid_view_shellcont.RowCount
         rows_to_scroll = grid_view_shellcont.VisibleRowCount
         scrapped_rows = list()
 
-        for row in range(0, total_row_count):
-            shall_we_scroll = (
-                row % rows_to_scroll == 0 
-                and row + rows_to_scroll <= total_row_count
-                and rows_to_scroll != total_row_count
-            )
-            if shall_we_scroll:
-                grid_view_shellcont.currentCellRow = row + rows_to_scroll - 1
-            elif total_row_count - row < rows_to_scroll:
+        for row_index in range(total_row_count):
+            # decide if we should scroll the table to see next set of rows
+            shall_we_scroll_table = (
+                    row_index % rows_to_scroll == 0 
+                    and row_index + rows_to_scroll <= total_row_count
+                    and rows_to_scroll != total_row_count)
+            if shall_we_scroll_table:
+                grid_view_shellcont.currentCellRow = row_index + rows_to_scroll - 1
+            # last scrolling in the end of the table control
+            elif total_row_count - row_index < rows_to_scroll:
                 grid_view_shellcont.currentCellRow = total_row_count - 1 
             
             row_content = list()
-            for cell in cells:
-                cell_value = self.grid_view_get_cell_value(element_id,
-                                                           cell,
-                                                           row)
+            for cell in column_names:
+                cell_value = self.get_cell_value_grid_view(
+                        gridview_id, cell, row_index)
                 row_content.append(cell_value)
 
             scrapped_rows.append(row_content)
+
         return scrapped_rows
 
 
-    def table_select_absolute_row(self, element_id, index):
-        table_control = self.get_element_by_id(element_id)
+    def select_absolute_row_table_control(self, table_control_id, index):
+        """selects a row in GuiTableControl object at given absolute index 
+        within the table.
+
+        Parameters
+        ----------
+        table_control_id : str
+            e.g. "wnd[0]/usr/.../subITEM:SAPLMR1M:6310/tblSAPLMR1MTC_MR1M"
+
+        index : int
+            index of a row to be selected
+        """
+        table_control = self.get_element_by_id(table_control_id)
         table_control.GetAbsoluteRow(index).selected = True
 
 
