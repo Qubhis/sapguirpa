@@ -1,4 +1,4 @@
-# SapGuiRpa
+# SapGuiRpa (SAP GUI RPA)
 
 I'm making this repository public as I think that it might help some SAP consultants with their work. I personally use this for developing my own scripts for various cases such as:
  - process testing
@@ -9,6 +9,9 @@ I'm making this repository public as I think that it might help some SAP consult
  - prototyping of RPA(RDA) robots
 
 I will appreciate any comments or ideas. Questions are welcomed as well :). 
+
+(written with Python 3.7)
+
 
 ### Quick usage from a command line:
 ```python
