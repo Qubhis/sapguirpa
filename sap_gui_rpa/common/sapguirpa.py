@@ -434,7 +434,9 @@ class SapGuiRpa:
             row_content = list()
             for cell in column_names:
                 cell_value = self.get_cell_value_grid_view(
-                        gridview_id, cell, row_index)
+                        gridview_id=gridview_id, 
+                        column_name=cell,
+                        row_index=row_index)
                 row_content.append(cell_value)
 
             scrapped_rows.append(row_content)
