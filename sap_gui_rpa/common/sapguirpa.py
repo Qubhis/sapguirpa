@@ -468,6 +468,10 @@ class SapGuiRpa:
         self.application = None
         self.sap_gui_object = None
 
+    
+    def __del__(self):
+        self.disconnect()
+
 
 def select_session(available_sessions, mode="cli"):
     '''Prompts user to select one entry from available_sessions either via 
